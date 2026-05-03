@@ -69,7 +69,7 @@ def list_notes():
             with conn.cursor() as cur:
                 cur.execute("SELECT id, text FROM notes ORDER BY id")
                 rows = cur.fetchall()
-        result = [{"id": r[0], "text": r[1], "created_at": datetime.now(timezone.utc)} for r in rows]
+        result = [{"id": r[0], "text": r[1], "created_at": datetime.now(timezone.utc).isoformat()} for r in rows]
         cache_client.set("notes:all", json.dumps(result))
         return jsonify(result)
     except Exception as e:

@@ -14,7 +14,7 @@ services:
         condition: service_healthy
           
   api:
-    image: ghcr.io/ibrahimothman/notes-app:v1.0.0
+    image: ghcr.io/ibrahimothman/notes-app:main
     build: .
     restart: unless-stopped
     environment:
