@@ -93,7 +93,7 @@ def create_note():
                 id = cur.fetchone()[0]
             conn.commit()
         cache_client.delete("notes:all")    
-        return jsonify({"id": id}), 201
+        return jsonify({"id": id, "text": text, "created_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
    
