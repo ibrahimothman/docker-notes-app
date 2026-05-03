@@ -1,0 +1,5 @@
+notes.local {
+    reverse_proxy api:5000
+    
+    tls internal
+}
