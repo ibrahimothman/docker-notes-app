@@ -67,9 +67,9 @@ def init_db():
 
 @app.route("/health", methods=["GET"])
 def health():
-    if os.environ.get("FAIL_HEALTHCHECK") == "1":
-        return jsonify({"status": "sick"}), 500
-    return jsonify({"status": "ok", "version": "v1.1.0"}), 200
+    
+    return jsonify({"status": "sick"}), 500
+    # return jsonify({"status": "ok", "version": "v1.1.0"}), 200
 
 @app.route("/notes", methods=["GET"])
 def list_notes():
