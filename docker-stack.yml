@@ -23,7 +23,7 @@ services:
         condition: on-failure
           
   api:
-    image: ghcr.io/ibrahimothman/notes-app:v1.1.0
+    image: ghcr.io/ibrahimothman/notes-app:v1.1.2
     networks:
       - public
       - private
