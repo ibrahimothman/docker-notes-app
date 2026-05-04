@@ -4,8 +4,14 @@ services:
     networks:
       - public
     ports:
-      - "80:80"
-      - "443:443"
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
     volumes:
       - caddy-data:/data
       - caddy-config:/config
@@ -17,19 +23,18 @@ services:
         condition: on-failure
           
   api:
-    image: ghcr.io/ibrahimothman/notes-app:v1.0.8
+    image: ghcr.io/ibrahimothman/notes-app:v1.0.9
     networks:
       - public
       - private
     secrets:
-      - db_password_2
+      - db_password
     environment:
       DB_HOST: db
-      DB_NAME: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD_FILE: /run/secrets/db_password_2
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD_FILE: /run/secrets/db_password
       REDIS_HOST: ${REDIS_HOST}
-      UPDATE_TEST: ${UPDATE_TEST}
     deploy:
       replicas: 3
       restart_policy:
@@ -53,11 +58,11 @@ services:
     networks:
       - private
     secrets:
-      - db_password_2
+      - db_password
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password_2
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     volumes:
       - notes-data:/var/lib/postgresql/data
     deploy:
@@ -68,7 +73,7 @@ services:
         constraints:
           - node.role == manager  
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U $$DB_USER -d $$DB_NAME"]
       interval: 5s
       timeout: 3s
       retries: 3
@@ -103,7 +108,7 @@ networks:
     internal: true
 
 secrets:
-  db_password_2:
+  db_password:
     external: true
 
 configs:

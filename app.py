@@ -17,13 +17,10 @@ app = Flask(__name__)
 def get_secret(key, default=None):
     # Check for the _FILE variable path
     path = os.environ.get(f"{key}_FILE")
-    print(f"DEBUG: Looking for secret at {path}") # Add this
     if path and os.path.exists(path):
         with open(path, 'r') as f:
             val = f.read().strip()
-            print(f"DEBUG: Found secret file") # Add this
             return val
-    print(f"DEBUG: Secret file not found, using env or default")        
     return os.environ.get(key, default)
 
 def get_pool():
@@ -42,7 +39,7 @@ def get_pool():
                 break
             except psycopg2.OperationalError as e:
                 print(f"Failed to initialize database: {e}")
-                time.sleep(2)
+                time.sleep(5)
                 continue
         if db_pool is None:
             raise Exception(f"Failed to initialize database")
@@ -69,8 +66,10 @@ def init_db():
     
 
 @app.route("/health", methods=["GET"])
-def health_check():
-    return jsonify({"status": "ok", "version": "v1.0.8"}), 200
+def health():
+    if os.environ.get("FAIL_HEALTHCHECK") == "1":
+        return jsonify({"status": "sick"}), 500
+    return jsonify({"status": "ok", "version": "v1.1.0"}), 200
 
 @app.route("/notes", methods=["GET"])
 def list_notes():
