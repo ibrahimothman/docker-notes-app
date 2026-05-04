@@ -17,9 +17,13 @@ app = Flask(__name__)
 def get_secret(key, default=None):
     # Check for the _FILE variable path
     path = os.environ.get(f"{key}_FILE")
+    print(f"DEBUG: Looking for secret at {path}") # Add this
     if path and os.path.exists(path):
         with open(path, 'r') as f:
-            return f.read().strip()
+            val = f.read().strip()
+            print(f"DEBUG: Found secret file") # Add this
+            return val
+    print(f"DEBUG: Secret file not found, using env or default")        
     return os.environ.get(key, default)
 
 def get_pool():
