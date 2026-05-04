@@ -7,32 +7,40 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
+    configs:
+      - source: caddyfile_v2
+        target: /etc/caddy/Caddyfile
+    deploy:
+      restart_policy:
+        condition: on-failure
           
   api:
-    image: ghcr.io/ibrahimothman/notes-app:master
-    build: .
+    image: ghcr.io/ibrahimothman/notes-app:v1.0.7
     networks:
       - public
       - private
-    restart: unless-stopped
+    secrets:
+      - db_password_2
     environment:
       DB_HOST: db
       DB_NAME: ${POSTGRES_DB}
       DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_PASSWORD_FILE: /run/secrets/db_password_2
       REDIS_HOST: ${REDIS_HOST}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      UPDATE_TEST: ${UPDATE_TEST}
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        delay: 5s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()"]
       interval: 10s
@@ -44,13 +52,21 @@ services:
     image: postgres:16
     networks:
       - private
-    restart: unless-stopped
+    secrets:
+      - db_password_2
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password_2
     volumes:
       - notes-data:/var/lib/postgresql/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager  
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -62,7 +78,10 @@ services:
     image: redis:8.4.2-alpine
     networks:
       - private
-    restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping"]
       interval: 10s
@@ -78,5 +97,15 @@ volumes:
 
 networks:
   public:
+    driver: overlay
   private:
+    driver: overlay
     internal: true
+
+secrets:
+  db_password_2:
+    external: true
+
+configs:
+  caddyfile_v2:
+    file: ./Caddyfile
