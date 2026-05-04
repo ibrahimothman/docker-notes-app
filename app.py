@@ -8,10 +8,19 @@ from psycopg2 import pool
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
+
+
 db_pool = None
 cache_client = redis.Redis(host=os.environ.get("REDIS_HOST", "localhost"), decode_responses=True)
 app = Flask(__name__)
 
+def get_secret(key, default=None):
+    # Check for the _FILE variable path
+    path = os.environ.get(f"{key}_FILE")
+    if path and os.path.exists(path):
+        with open(path, 'r') as f:
+            return f.read().strip()
+    return os.environ.get(key, default)
 
 def get_pool():
     global db_pool
@@ -23,7 +32,7 @@ def get_pool():
                     host=os.environ.get("DB_HOST", "localhost"),
                     database=os.environ.get("DB_NAME", "notes"),
                     user=os.environ.get("DB_USER", "postgres"),
-                    password=os.environ.get("DB_PASSWORD", "postgres"),
+                    password=get_secret("DB_PASSWORD", "postgres"),
                     connect_timeout=10
                 )
                 break
@@ -174,10 +183,13 @@ def update_note(id):
         return jsonify({"error": str(e)}), 500
 
     
-
-
+def log():
+    for i in range(5):
+        print(f"Startup step {i}...")
+        time.sleep(1)
 
 if __name__ == "__main__":
+    log()
     init_db()
     app.run(host="0.0.0.0", port=5000)
 
